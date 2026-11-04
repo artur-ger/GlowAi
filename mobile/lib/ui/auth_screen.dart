@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/auth_api.dart';
 import 'widgets/legal_links.dart';
+import 'widgets/native_text_field.dart';
 
 enum _AuthPhase { login, register, verify, forgot, reset }
 
@@ -185,49 +186,43 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           const SizedBox(height: 18),
           if (_phase == _AuthPhase.register) ...[
-            TextField(
+            NativeTextField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Имя'),
+              label: 'Имя',
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 12),
           ],
-          TextField(
+          NativeTextField(
             controller: _email,
+            label: 'Email',
             enabled: !(_phase == _AuthPhase.verify || _phase == _AuthPhase.reset) ||
                 _email.text.isEmpty,
-            decoration: const InputDecoration(labelText: 'Email'),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
           ),
           if (showPassword) ...[
             const SizedBox(height: 12),
-            TextField(
+            NativeTextField(
               controller: _password,
+              label: _phase == _AuthPhase.reset ? 'Новый пароль (мин. 6)' : 'Пароль (мин. 6)',
               obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: _phase == _AuthPhase.reset ? 'Новый пароль (мин. 6)' : 'Пароль (мин. 6)',
-                suffixIcon: IconButton(
-                  tooltip: _obscurePassword ? 'Показать пароль' : 'Скрыть пароль',
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                  ),
-                ),
-              ),
-              onSubmitted: (_) => _loading ? null : _submit(),
+              onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
+              onSubmitted: (_) {
+                if (!_loading) _submit();
+              },
             ),
           ],
           if (showCode) ...[
             const SizedBox(height: 12),
-            TextField(
+            NativeTextField(
               controller: _code,
-              decoration: InputDecoration(
-                labelText: _phase == _AuthPhase.reset ? 'Код сброса' : 'Код подтверждения',
-              ),
+              label: _phase == _AuthPhase.reset ? 'Код сброса' : 'Код подтверждения',
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _loading ? null : _submit(),
+              onSubmitted: (_) {
+                if (!_loading) _submit();
+              },
             ),
           ],
           if (_phase == _AuthPhase.register) ...[
