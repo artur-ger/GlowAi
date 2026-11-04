@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../../core/theme.dart';
 import '../../data/countries.dart';
 import '../../data/geo_api.dart';
 import '../../data/places.dart';
+import 'native_text_controller.dart';
+import 'native_text_field.dart';
 
 Future<PlaceOption?> showCityPickerSheet(
   BuildContext context, {
@@ -35,8 +38,8 @@ class _PlacePickerBody extends StatefulWidget {
 
 class _PlacePickerBodyState extends State<_PlacePickerBody> {
   final _geo = GeoApi();
-  final _countryQuery = TextEditingController();
-  final _cityQuery = TextEditingController();
+  final _countryQuery = NativeTextEditingController();
+  final _cityQuery = NativeTextEditingController();
 
   late CountryOption _country;
   List<CountryOption> _countryFiltered = countries;
@@ -50,10 +53,12 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
   void initState() {
     super.initState();
     final code = widget.selected?.countryCode;
+    // Home picker titles: RU «дом», EN «home»
+    final titleLower = widget.title.toLowerCase();
+    final isHomePicker =
+        titleLower.contains('дом') || titleLower.contains('home');
     _country = countryByCode(code ?? '') ??
-        (widget.title.toLowerCase().contains('дом')
-            ? countryByCode('RU')!
-            : countryByCode('TR')!);
+        (isHomePicker ? countryByCode('RU')! : countryByCode('TR')!);
     final initialCity = widget.selected?.name;
     if (initialCity != null && initialCity.isNotEmpty) {
       _cityQuery.text = initialCity;
@@ -197,23 +202,15 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: TextField(
+                      child: NativeTextField(
                         controller: _countryQuery,
+                        hint: 'Найти страну',
                         autofocus: true,
+                        prefixIcon: Icons.public,
                         onChanged: (v) {
                           _filterCountries(v);
                           setModalState(() {});
                         },
-                        decoration: InputDecoration(
-                          hintText: 'Найти страну',
-                          prefixIcon: const Icon(Icons.public),
-                          filled: true,
-                          fillColor: GlowColors.mist,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -223,13 +220,15 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
                         itemBuilder: (context, i) {
                           final c = _countryFiltered[i];
                           final selected = c.code == _country.code;
-                          return ListTile(
-                            title: Text(c.nameRu, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text(c.code.isEmpty ? 'WORLD' : c.code),
-                            trailing: selected
-                                ? const Icon(Icons.check_circle, color: GlowColors.sea)
-                                : null,
-                            onTap: () => Navigator.pop(context, c),
+                          return PointerInterceptor(
+                            child: ListTile(
+                              title: Text(c.nameRu, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Text(c.code.isEmpty ? 'WORLD' : c.code),
+                              trailing: selected
+                                  ? const Icon(Icons.check_circle, color: GlowColors.sea)
+                                  : null,
+                              onTap: () => Navigator.pop(context, c),
+                            ),
                           );
                         },
                       ),
@@ -259,17 +258,19 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
   Widget _placeTile(PlaceOption place, {required bool elsewhere}) {
     final selected = widget.selected?.name == place.name &&
         widget.selected?.countryCode == place.countryCode;
-    return ListTile(
-      title: Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(
-        [
-          if (place.admin1 != null && place.admin1!.isNotEmpty) place.admin1!,
-          place.country,
-          if (elsewhere) '· другая страна',
-        ].join(' · '),
+    return PointerInterceptor(
+      child: ListTile(
+        title: Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(
+          [
+            if (place.admin1 != null && place.admin1!.isNotEmpty) place.admin1!,
+            place.country,
+            if (elsewhere) '· другая страна',
+          ].join(' · '),
+        ),
+        trailing: selected ? const Icon(Icons.check_circle, color: GlowColors.sea) : null,
+        onTap: () => Navigator.pop(context, place),
       ),
-      trailing: selected ? const Icon(Icons.check_circle, color: GlowColors.sea) : null,
-      onTap: () => Navigator.pop(context, place),
     );
   }
 
@@ -338,32 +339,19 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
+              child: NativeTextField(
                 controller: _cityQuery,
-                onChanged: _onCityChanged,
+                hint: 'Город: Анталья, Dubai, Phuket…',
                 autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Город: Анталья, Dubai, Phuket…',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _loading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: GlowColors.mist,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                prefixIcon: Icons.search_rounded,
+                onChanged: _onCityChanged,
               ),
             ),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
               child: Text(

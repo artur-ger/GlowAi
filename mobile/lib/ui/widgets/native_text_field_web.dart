@@ -16,10 +16,13 @@ Widget buildNativeTextField({
   String? hint,
   bool enabled = true,
   bool obscureText = false,
+  bool autofocus = false,
   TextInputType? keyboardType,
   TextInputAction? textInputAction,
+  ValueChanged<String>? onChanged,
   ValueChanged<String>? onSubmitted,
   VoidCallback? onToggleObscure,
+  IconData? prefixIcon,
 }) {
   return _WebNativeTextField(
     controller: controller,
@@ -27,10 +30,13 @@ Widget buildNativeTextField({
     hint: hint,
     enabled: enabled,
     obscureText: obscureText,
+    autofocus: autofocus,
     keyboardType: keyboardType,
     textInputAction: textInputAction,
+    onChanged: onChanged,
     onSubmitted: onSubmitted,
     onToggleObscure: onToggleObscure,
+    prefixIcon: prefixIcon,
   );
 }
 
@@ -41,10 +47,13 @@ class _WebNativeTextField extends StatefulWidget {
     this.hint,
     required this.enabled,
     required this.obscureText,
+    required this.autofocus,
     this.keyboardType,
     this.textInputAction,
+    this.onChanged,
     this.onSubmitted,
     this.onToggleObscure,
+    this.prefixIcon,
   });
 
   final TextEditingController controller;
@@ -52,10 +61,13 @@ class _WebNativeTextField extends StatefulWidget {
   final String? hint;
   final bool enabled;
   final bool obscureText;
+  final bool autofocus;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
+  final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onToggleObscure;
+  final IconData? prefixIcon;
 
   @override
   State<_WebNativeTextField> createState() => _WebNativeTextFieldState();
@@ -72,29 +84,34 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
   void initState() {
     super.initState();
     _viewType = 'glowai-native-tf-${_nextId++}';
-    _root = html.DivElement()
-      ..style.cssText = 'width:100%;position:relative;box-sizing:border-box;';
+    final leftPad = widget.prefixIcon != null ? 42 : 14;
+    final rightPad = widget.onToggleObscure != null ? 44 : 14;
 
-    _input = html.InputElement()
-      ..className = 'glowai-native-input'
-      ..value = widget.controller.text
-      ..disabled = !widget.enabled
-      ..placeholder = widget.hint ?? widget.label ?? ''
-      ..style.cssText = '''
-        width: 100%;
-        height: 52px;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0 ${widget.onToggleObscure != null ? '44' : '14'}px 0 14px;
-        border: 1px solid #D5E3E0;
-        border-radius: 12px;
-        background: #ffffff;
-        color: #142429;
-        font-size: 15px;
-        font-family: inherit;
-        outline: none;
-      ''';
+    _root = html.DivElement();
+    _root.style.cssText = 'width:100%;position:relative;box-sizing:border-box;';
+
+    _input = html.InputElement();
+    _input.className = 'glowai-native-input';
+    _input.value = widget.controller.text;
+    _input.disabled = !widget.enabled;
+    _input.placeholder = widget.hint ?? widget.label ?? '';
+    _input.autofocus = widget.autofocus;
+    _input.style.cssText = '''
+      width: 100%;
+      height: 52px;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0 ${rightPad}px 0 ${leftPad}px;
+      border: 1px solid #D5E3E0;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #142429;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+    ''';
     _applyInputType();
+
     void pushToFlutter() {
       if (_syncing) return;
       _syncing = true;
@@ -104,6 +121,7 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
         selection: TextSelection.collapsed(offset: live.length),
       );
       _syncing = false;
+      widget.onChanged?.call(live);
     }
 
     _input.onInput.listen((_) => pushToFlutter());
@@ -151,6 +169,12 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
 
     widget.controller.addListener(_onController);
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int id) => _root);
+
+    if (widget.autofocus) {
+      Future<void>.delayed(const Duration(milliseconds: 50), () {
+        _input.focus();
+      });
+    }
   }
 
   void _applyInputType() {

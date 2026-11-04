@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../core/theme.dart';
 import '../data/analyze_api.dart';
@@ -512,27 +513,29 @@ class HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 18),
               _SectionLabel(text: t('home.from'), step: '1'),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _CityTile(
-                      caption: _mode == 'return_home' ? t('home.home') : t('home.from'),
-                      city: _home,
-                      onTap: () => _pickCity(home: true),
+              PointerInterceptor(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _CityTile(
+                        caption: _mode == 'return_home' ? t('home.home') : t('home.from'),
+                        city: _home,
+                        onTap: () => _pickCity(home: true),
+                      ),
                     ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Icon(Icons.flight_takeoff_rounded, color: GlowColors.sea),
-                  ),
-                  Expanded(
-                    child: _CityTile(
-                      caption: _mode == 'return_home' ? t('home.were') : t('home.to'),
-                      city: _destination,
-                      onTap: () => _pickCity(home: false),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Icon(Icons.flight_takeoff_rounded, color: GlowColors.sea),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: _CityTile(
+                        caption: _mode == 'return_home' ? t('home.were') : t('home.to'),
+                        city: _destination,
+                        onTap: () => _pickCity(home: false),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (_mode == 'pre_trip') ...[
                 const SizedBox(height: 14),

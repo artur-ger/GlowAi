@@ -12,10 +12,13 @@ class NativeTextField extends StatelessWidget {
     this.hint,
     this.enabled = true,
     this.obscureText = false,
+    this.autofocus = false,
     this.keyboardType,
     this.textInputAction,
+    this.onChanged,
     this.onSubmitted,
     this.onToggleObscure,
+    this.prefixIcon,
   });
 
   final TextEditingController controller;
@@ -23,10 +26,13 @@ class NativeTextField extends StatelessWidget {
   final String? hint;
   final bool enabled;
   final bool obscureText;
+  final bool autofocus;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
+  final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onToggleObscure;
+  final IconData? prefixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +42,13 @@ class NativeTextField extends StatelessWidget {
       hint: hint,
       enabled: enabled,
       obscureText: obscureText,
+      autofocus: autofocus,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      onChanged: onChanged,
       onSubmitted: onSubmitted,
       onToggleObscure: onToggleObscure,
+      prefixIcon: prefixIcon,
     );
   }
 }
