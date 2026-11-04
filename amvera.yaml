@@ -1,0 +1,15 @@
+# Amvera Cloud — GlowAi (FastAPI + Flutter web на /app/)
+# Docs: https://docs.amvera.ru/applications/configuration/docker.html
+meta:
+  environment: docker
+  toolchain:
+    name: docker
+
+build:
+  dockerfile: Dockerfile
+
+run:
+  # uvicorn слушает 8000 (см. Dockerfile CMD)
+  containerPort: 8000
+  # SQLite и прочие данные: DATABASE_URL=sqlite:////data/glowai.db
+  persistenceMount: /data
