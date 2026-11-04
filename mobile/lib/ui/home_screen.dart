@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../core/theme.dart';
 import '../data/analyze_api.dart';
@@ -470,7 +469,6 @@ class HomeScreenState extends State<HomeScreen> {
         child: SafeArea(
           bottom: false,
           child: ListView(
-            key: ValueKey('home-${_locale.code}'),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               const Align(
@@ -503,14 +501,12 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ],
               const SizedBox(height: 18),
-              PointerInterceptor(
-                child: _ModeToggle(
-                  mode: _mode,
-                  onChanged: (m) => setState(() => _mode = m),
-                  preLabel: t('home.mode.pre'),
-                  sosLabel: t('home.mode.sos'),
-                  returnLabel: t('home.mode.return'),
-                ),
+              _ModeToggle(
+                mode: _mode,
+                onChanged: (m) => setState(() => _mode = m),
+                preLabel: t('home.mode.pre'),
+                sosLabel: t('home.mode.sos'),
+                returnLabel: t('home.mode.return'),
               ),
               const SizedBox(height: 18),
               _SectionLabel(text: t('home.from'), step: '1'),
@@ -518,12 +514,10 @@ class HomeScreenState extends State<HomeScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: PointerInterceptor(
-                      child: _CityTile(
-                        caption: _mode == 'return_home' ? t('home.home') : t('home.from'),
-                        city: _home,
-                        onTap: () => _pickCity(home: true),
-                      ),
+                    child: _CityTile(
+                      caption: _mode == 'return_home' ? t('home.home') : t('home.from'),
+                      city: _home,
+                      onTap: () => _pickCity(home: true),
                     ),
                   ),
                   const Padding(
@@ -531,12 +525,10 @@ class HomeScreenState extends State<HomeScreen> {
                     child: Icon(Icons.flight_takeoff_rounded, color: GlowColors.sea),
                   ),
                   Expanded(
-                    child: PointerInterceptor(
-                      child: _CityTile(
-                        caption: _mode == 'return_home' ? t('home.were') : t('home.to'),
-                        city: _destination,
-                        onTap: () => _pickCity(home: false),
-                      ),
+                    child: _CityTile(
+                      caption: _mode == 'return_home' ? t('home.were') : t('home.to'),
+                      city: _destination,
+                      onTap: () => _pickCity(home: false),
                     ),
                   ),
                 ],
@@ -546,22 +538,18 @@ class HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: PointerInterceptor(
-                        child: _DateTile(
-                          caption: t('home.depart'),
-                          value: _fmt(_tripStart),
-                          onTap: () => _pickDate(start: true),
-                        ),
+                      child: _DateTile(
+                        caption: t('home.depart'),
+                        value: _fmt(_tripStart),
+                        onTap: () => _pickDate(start: true),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: PointerInterceptor(
-                        child: _DateTile(
-                          caption: t('home.return'),
-                          value: _fmt(_tripEnd),
-                          onTap: () => _pickDate(start: false),
-                        ),
+                      child: _DateTile(
+                        caption: t('home.return'),
+                        value: _fmt(_tripEnd),
+                        onTap: () => _pickDate(start: false),
                       ),
                     ),
                   ],
@@ -1091,34 +1079,37 @@ class _CityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: Colors.white,
       borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: GlowColors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(caption, style: const TextStyle(color: GlowColors.muted, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(
-              city.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-            ),
-            Text(
-              city.country,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: GlowColors.muted, fontSize: 12),
-            ),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: GlowColors.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(caption, style: const TextStyle(color: GlowColors.muted, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text(
+                city.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+              Text(
+                city.country,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: GlowColors.muted, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );

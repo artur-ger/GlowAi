@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../../core/theme.dart';
 import '../../data/countries.dart';
@@ -220,15 +219,13 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
                         itemBuilder: (context, i) {
                           final c = _countryFiltered[i];
                           final selected = c.code == _country.code;
-                          return PointerInterceptor(
-                            child: ListTile(
-                              title: Text(c.nameRu, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              subtitle: Text(c.code.isEmpty ? 'WORLD' : c.code),
-                              trailing: selected
-                                  ? const Icon(Icons.check_circle, color: GlowColors.sea)
-                                  : null,
-                              onTap: () => Navigator.pop(context, c),
-                            ),
+                          return ListTile(
+                            title: Text(c.nameRu, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(c.code.isEmpty ? 'WORLD' : c.code),
+                            trailing: selected
+                                ? const Icon(Icons.check_circle, color: GlowColors.sea)
+                                : null,
+                            onTap: () => Navigator.pop(context, c),
                           );
                         },
                       ),
@@ -258,19 +255,17 @@ class _PlacePickerBodyState extends State<_PlacePickerBody> {
   Widget _placeTile(PlaceOption place, {required bool elsewhere}) {
     final selected = widget.selected?.name == place.name &&
         widget.selected?.countryCode == place.countryCode;
-    return PointerInterceptor(
-      child: ListTile(
-        title: Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(
-          [
-            if (place.admin1 != null && place.admin1!.isNotEmpty) place.admin1!,
-            place.country,
-            if (elsewhere) '· другая страна',
-          ].join(' · '),
-        ),
-        trailing: selected ? const Icon(Icons.check_circle, color: GlowColors.sea) : null,
-        onTap: () => Navigator.pop(context, place),
+    return ListTile(
+      title: Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+      subtitle: Text(
+        [
+          if (place.admin1 != null && place.admin1!.isNotEmpty) place.admin1!,
+          place.country,
+          if (elsewhere) '· другая страна',
+        ].join(' · '),
       ),
+      trailing: selected ? const Icon(Icons.check_circle, color: GlowColors.sea) : null,
+      onTap: () => Navigator.pop(context, place),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme.dart';
 import 'data/profile_prefs_store.dart';
@@ -49,8 +50,15 @@ class _GlowAiAppState extends State<GlowAiApp> {
           title: 'GlowAi',
           debugShowCheckedModeBanner: false,
           theme: GlowTheme.light,
+          // App copy uses AppLocale/S; Material widgets still need real RU/EN
+          // delegates — Locale('ru') without them breaks web hit-testing.
           locale: _locale.locale,
           supportedLocales: const [Locale('ru'), Locale('en')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           home: _loading
               ? const Scaffold(body: Center(child: CircularProgressIndicator()))
               : _onboarded
