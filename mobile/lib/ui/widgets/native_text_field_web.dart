@@ -6,6 +6,7 @@ import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import 'native_text_controller.dart';
 
 int _nextId = 0;
 
@@ -94,22 +95,38 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
         outline: none;
       ''';
     _applyInputType();
-    _input.onInput.listen((_) {
+    void pushToFlutter() {
       if (_syncing) return;
       _syncing = true;
+      final live = _input.value ?? '';
       widget.controller.value = TextEditingValue(
-        text: _input.value ?? '',
-        selection: TextSelection.collapsed(offset: (_input.value ?? '').length),
+        text: live,
+        selection: TextSelection.collapsed(offset: live.length),
       );
       _syncing = false;
-    });
+    }
+
+    _input.onInput.listen((_) => pushToFlutter());
+    _input.onChange.listen((_) => pushToFlutter());
+    _input.onBlur.listen((_) => pushToFlutter());
     _input.onKeyDown.listen((event) {
       if (event.key == 'Enter') {
         event.preventDefault();
+        pushToFlutter();
         widget.onSubmitted?.call(_input.value ?? '');
       }
     });
     _root.append(_input);
+
+    final c = widget.controller;
+    if (c is NativeTextEditingController) {
+      c.bindWeb(
+        read: () => _input.value ?? '',
+        write: (value) {
+          if (_input.value != value) _input.value = value;
+        },
+      );
+    }
 
     if (widget.onToggleObscure != null) {
       final eye = html.ButtonElement();
@@ -171,6 +188,8 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
   @override
   void dispose() {
     widget.controller.removeListener(_onController);
+    final c = widget.controller;
+    if (c is NativeTextEditingController) c.unbindWeb();
     super.dispose();
   }
 

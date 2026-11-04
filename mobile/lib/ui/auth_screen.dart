@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/auth_api.dart';
 import 'widgets/legal_links.dart';
+import 'widgets/native_text_controller.dart';
 import 'widgets/native_text_field.dart';
 
 enum _AuthPhase { login, register, verify, forgot, reset }
@@ -17,10 +18,10 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _api = AuthApi();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  final _name = TextEditingController();
-  final _code = TextEditingController();
+  final _email = NativeTextEditingController();
+  final _password = NativeTextEditingController();
+  final _name = NativeTextEditingController();
+  final _code = NativeTextEditingController();
 
   _AuthPhase _phase = _AuthPhase.login;
   bool _obscurePassword = true;
@@ -68,7 +69,15 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
+  void _flushFields() {
+    _email.flushFromWeb();
+    _password.flushFromWeb();
+    _name.flushFromWeb();
+    _code.flushFromWeb();
+  }
+
   Future<void> _submit() async {
+    _flushFields();
     setState(() {
       _loading = true;
       _error = null;
@@ -132,6 +141,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _resend() async {
+    _flushFields();
     setState(() {
       _loading = true;
       _error = null;
