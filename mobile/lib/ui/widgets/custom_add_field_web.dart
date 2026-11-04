@@ -23,6 +23,8 @@ Widget buildCustomAddField({
   );
 }
 
+/// Web: keep [HtmlElementView] unmounted until tap — otherwise platform-view
+/// DOM layers steal clicks from widgets above (city tiles, chips, etc.).
 class _WebCustomAddField extends StatefulWidget {
   const _WebCustomAddField({
     required this.hint,
@@ -41,35 +43,71 @@ class _WebCustomAddField extends StatefulWidget {
 }
 
 class _WebCustomAddFieldState extends State<_WebCustomAddField> {
-  late final String _viewType;
-  late final html.DivElement _root;
-  late final html.InputElement _input;
-  late final html.ButtonElement _button;
+  bool _active = false;
+  String? _viewType;
+  html.DivElement? _root;
+  html.InputElement? _input;
+  html.ButtonElement? _button;
 
   @override
-  void initState() {
-    super.initState();
-    _viewType = 'glowai-custom-add-${_nextViewId++}';
+  void didUpdateWidget(covariant _WebCustomAddField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final input = _input;
+    final button = _button;
+    if (input != null) {
+      input.disabled = !widget.enabled;
+      if (oldWidget.hint != widget.hint) {
+        input.placeholder = widget.hint;
+      }
+    }
+    if (button != null) {
+      button.disabled = !widget.enabled;
+    }
+    if (!widget.enabled && _active) {
+      setState(() => _active = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tearDownPlatformView();
+    super.dispose();
+  }
+
+  void _tearDownPlatformView() {
+    _input?.remove();
+    _button?.remove();
+    _root?.remove();
+    _input = null;
+    _button = null;
+    _root = null;
+    _viewType = null;
+  }
+
+  void _ensurePlatformView() {
+    if (_viewType != null) return;
 
     final border = widget.accent == GlowColors.coral
         ? '1px solid rgba(196, 92, 72, 0.35)'
         : '1px solid #D5E3E0';
     final accentHex = _cssHex(widget.accent);
+    final viewType = 'glowai-custom-add-${_nextViewId++}';
 
-    _root = html.DivElement();
-    _root.style.cssText = '''
+    final root = html.DivElement()
+      ..style.cssText = '''
       width: 100%;
       height: 48px;
       position: relative;
       box-sizing: border-box;
+      pointer-events: auto;
     ''';
 
-    _input = html.InputElement(type: 'text');
-    _input.className = 'glowai-native-input';
-    _input.placeholder = widget.hint;
-    _input.maxLength = 80;
-    _input.disabled = !widget.enabled;
-    _input.style.cssText = '''
+    final input = html.InputElement(type: 'text')
+      ..className = 'glowai-native-input'
+      ..placeholder = widget.hint
+      ..maxLength = 80
+      ..disabled = !widget.enabled
+      ..style.cssText = '''
       width: 100%;
       height: 48px;
       box-sizing: border-box;
@@ -84,19 +122,29 @@ class _WebCustomAddFieldState extends State<_WebCustomAddField> {
       line-height: 48px;
       outline: none;
     ''';
-    _input.onKeyDown.listen((event) {
+    input.onKeyDown.listen((event) {
       if (event.key == 'Enter') {
         event.preventDefault();
         _submit();
       }
     });
+    input.onBlur.listen((_) {
+      // Collapse back to Flutter placeholder when empty so DOM can't linger.
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (!mounted) return;
+        final value = _input?.value?.trim() ?? '';
+        if (value.isEmpty) {
+          setState(() => _active = false);
+        }
+      });
+    });
 
-    _button = html.ButtonElement();
-    _button.type = 'button';
-    _button.title = 'Add';
-    _button.text = '+';
-    _button.disabled = !widget.enabled;
-    _button.style.cssText = '''
+    final button = html.ButtonElement()
+      ..type = 'button'
+      ..title = 'Add'
+      ..text = '+'
+      ..disabled = !widget.enabled
+      ..style.cssText = '''
       position: absolute;
       right: 4px;
       top: 4px;
@@ -111,31 +159,36 @@ class _WebCustomAddFieldState extends State<_WebCustomAddField> {
       cursor: pointer;
       padding: 0;
     ''';
-    _button.onClick.listen((_) => _submit());
+    button.onClick.listen((_) => _submit());
 
-    _root.append(_input);
-    _root.append(_button);
+    root.append(input);
+    root.append(button);
 
     ui_web.platformViewRegistry.registerViewFactory(
-      _viewType,
-      (int viewId) => _root,
+      viewType,
+      (int viewId) => root,
     );
+
+    _viewType = viewType;
+    _root = root;
+    _input = input;
+    _button = button;
   }
 
-  @override
-  void didUpdateWidget(covariant _WebCustomAddField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _input.disabled = !widget.enabled;
-    _button.disabled = !widget.enabled;
-    if (oldWidget.hint != widget.hint) {
-      _input.placeholder = widget.hint;
-    }
+  void _activate() {
+    if (!widget.enabled || _active) return;
+    _ensurePlatformView();
+    setState(() => _active = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _input?.focus();
+    });
   }
 
   void _submit() {
     if (!widget.enabled) return;
-    final value = _input.value ?? '';
-    _input.value = '';
+    final value = _input?.value ?? '';
+    if (_input != null) _input!.value = '';
+    setState(() => _active = false);
     widget.onSubmit(value);
   }
 
@@ -146,10 +199,51 @@ class _WebCustomAddFieldState extends State<_WebCustomAddField> {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = widget.accent == GlowColors.coral
+        ? GlowColors.coral.withValues(alpha: 0.35)
+        : GlowColors.line;
+
+    if (!_active || _viewType == null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.enabled ? _activate : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
+            height: 48,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    widget.hint,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: GlowColors.muted.withValues(alpha: widget.enabled ? 1 : 0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(Icons.add_rounded, color: widget.accent, size: 22),
+                const SizedBox(width: 12),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 48,
       width: double.infinity,
-      child: HtmlElementView(viewType: _viewType),
+      child: HtmlElementView(viewType: _viewType!),
     );
   }
 }

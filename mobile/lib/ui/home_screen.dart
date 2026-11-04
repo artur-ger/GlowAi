@@ -503,57 +503,65 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ],
               const SizedBox(height: 18),
-              _ModeToggle(
-                mode: _mode,
-                onChanged: (m) => setState(() => _mode = m),
-                preLabel: t('home.mode.pre'),
-                sosLabel: t('home.mode.sos'),
-                returnLabel: t('home.mode.return'),
+              PointerInterceptor(
+                child: _ModeToggle(
+                  mode: _mode,
+                  onChanged: (m) => setState(() => _mode = m),
+                  preLabel: t('home.mode.pre'),
+                  sosLabel: t('home.mode.sos'),
+                  returnLabel: t('home.mode.return'),
+                ),
               ),
               const SizedBox(height: 18),
               _SectionLabel(text: t('home.from'), step: '1'),
               const SizedBox(height: 10),
-              PointerInterceptor(
-                child: Row(
-                  children: [
-                    Expanded(
+              Row(
+                children: [
+                  Expanded(
+                    child: PointerInterceptor(
                       child: _CityTile(
                         caption: _mode == 'return_home' ? t('home.home') : t('home.from'),
                         city: _home,
                         onTap: () => _pickCity(home: true),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.flight_takeoff_rounded, color: GlowColors.sea),
-                    ),
-                    Expanded(
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.flight_takeoff_rounded, color: GlowColors.sea),
+                  ),
+                  Expanded(
+                    child: PointerInterceptor(
                       child: _CityTile(
                         caption: _mode == 'return_home' ? t('home.were') : t('home.to'),
                         city: _destination,
                         onTap: () => _pickCity(home: false),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               if (_mode == 'pre_trip') ...[
                 const SizedBox(height: 14),
                 Row(
                   children: [
                     Expanded(
-                      child: _DateTile(
-                        caption: t('home.depart'),
-                        value: _fmt(_tripStart),
-                        onTap: () => _pickDate(start: true),
+                      child: PointerInterceptor(
+                        child: _DateTile(
+                          caption: t('home.depart'),
+                          value: _fmt(_tripStart),
+                          onTap: () => _pickDate(start: true),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _DateTile(
-                        caption: t('home.return'),
-                        value: _fmt(_tripEnd),
-                        onTap: () => _pickDate(start: false),
+                      child: PointerInterceptor(
+                        child: _DateTile(
+                          caption: t('home.return'),
+                          value: _fmt(_tripEnd),
+                          onTap: () => _pickDate(start: false),
+                        ),
                       ),
                     ),
                   ],
