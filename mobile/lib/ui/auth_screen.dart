@@ -26,6 +26,11 @@ class _AuthScreenState extends State<AuthScreen> {
   final _password = NativeTextEditingController();
   final _name = NativeTextEditingController();
   final _code = NativeTextEditingController();
+  // Keep HTML platform-view state tied to each field when login↔register swaps.
+  final _nameFieldKey = GlobalKey();
+  final _emailFieldKey = GlobalKey();
+  final _passwordFieldKey = GlobalKey();
+  final _codeFieldKey = GlobalKey();
 
   _AuthPhase _phase = _AuthPhase.login;
   bool _obscurePassword = true;
@@ -209,6 +214,7 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 18),
           if (_phase == _AuthPhase.register) ...[
             NativeTextField(
+              key: _nameFieldKey,
               controller: _name,
               label: 'Имя',
               textInputAction: TextInputAction.next,
@@ -216,6 +222,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 12),
           ],
           NativeTextField(
+            key: _emailFieldKey,
             controller: _email,
             label: 'Email',
             enabled: !(_phase == _AuthPhase.verify || _phase == _AuthPhase.reset) ||
@@ -226,6 +233,7 @@ class _AuthScreenState extends State<AuthScreen> {
           if (showPassword) ...[
             const SizedBox(height: 12),
             NativeTextField(
+              key: _passwordFieldKey,
               controller: _password,
               label: _phase == _AuthPhase.reset ? 'Новый пароль (мин. 6)' : 'Пароль (мин. 6)',
               obscureText: _obscurePassword,
@@ -238,6 +246,7 @@ class _AuthScreenState extends State<AuthScreen> {
           if (showCode) ...[
             const SizedBox(height: 12),
             NativeTextField(
+              key: _codeFieldKey,
               controller: _code,
               label: _phase == _AuthPhase.reset ? 'Код сброса' : 'Код подтверждения',
               keyboardType: TextInputType.number,

@@ -136,16 +136,6 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
     });
     _root.append(_input);
 
-    final c = widget.controller;
-    if (c is NativeTextEditingController) {
-      c.bindWeb(
-        read: () => _input.value ?? '',
-        write: (value) {
-          if (_input.value != value) _input.value = value;
-        },
-      );
-    }
-
     if (widget.onToggleObscure != null) {
       final eye = html.ButtonElement();
       eye.type = 'button';
@@ -167,6 +157,7 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
       _root.append(eye);
     }
 
+    _bindController(widget.controller);
     widget.controller.addListener(_onController);
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int id) => _root);
 
@@ -199,9 +190,33 @@ class _WebNativeTextFieldState extends State<_WebNativeTextField> {
     }
   }
 
+  void _bindController(TextEditingController controller) {
+    if (controller is NativeTextEditingController) {
+      controller.bindWeb(
+        read: () => _input.value ?? '',
+        write: (value) {
+          if (_input.value != value) _input.value = value;
+        },
+      );
+    }
+  }
+
   @override
   void didUpdateWidget(covariant _WebNativeTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onController);
+      if (oldWidget.controller is NativeTextEditingController) {
+        (oldWidget.controller as NativeTextEditingController).unbindWeb();
+      }
+      // value.text is Flutter storage; .text may already proxy another HTML input
+      final stored = widget.controller.value.text;
+      _bindController(widget.controller);
+      widget.controller.addListener(_onController);
+      _syncing = true;
+      _input.value = stored;
+      _syncing = false;
+    }
     _input.disabled = !widget.enabled;
     _applyInputType();
     _input.placeholder = widget.hint ?? widget.label ?? '';
