@@ -35,6 +35,9 @@ def to_out(user: User, row: ClimateUserProfile) -> ClimateAccountProfile:
         activity=row.activity or "moderate",  # type: ignore[arg-type]
         age_band=row.age_band or "unknown",  # type: ignore[arg-type]
         sex=row.sex or "unknown",  # type: ignore[arg-type]
+        dress_bias=getattr(row, "dress_bias", None) or "typical",  # type: ignore[arg-type]
+        acclimation=getattr(row, "acclimation", None) or "unknown",  # type: ignore[arg-type]
+        vignette_sensation=getattr(row, "vignette_sensation", None) or "unknown",  # type: ignore[arg-type]
         feedback_offset=float(row.feedback_offset or 0),
         feedback_count=int(row.feedback_count or 0),
         habits=_split(row.habits_csv),
@@ -58,6 +61,9 @@ def apply_put(row: ClimateUserProfile, body: ClimateAccountProfile) -> None:
     row.activity = body.activity
     row.age_band = body.age_band
     row.sex = body.sex
+    row.dress_bias = body.dress_bias
+    row.acclimation = body.acclimation
+    row.vignette_sensation = body.vignette_sensation
     row.feedback_offset = max(-5.0, min(5.0, float(body.feedback_offset)))
     row.feedback_count = max(0, int(body.feedback_count))
     row.habits_csv = _join(body.habits)

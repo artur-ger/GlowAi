@@ -22,15 +22,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _prefs = ProfilePrefsStore();
   final _locale = AppLocale.instance;
 
-  /// 0..2 intro, 3 cold, 4 heat, 5 activity, 6 age, 7 sex, 8 city,
-  /// 9 habits, 10 allergies, 11 schedule, 12 skin
+  /// 0..2 intro, then mode (3), then question indices into [_flow].
   int _page = 0;
+  bool _quickMode = true;
+  int _flowIndex = 0;
 
   double _coldBias = 0;
   double _heatBias = 0;
   String _activity = 'moderate';
   String _ageBand = 'unknown';
   String _sex = 'unknown';
+  String _dressBias = 'typical';
+  String _acclimation = 'unknown';
+  String _vignetteSensation = 'unknown';
   final Set<String> _habits = {};
   final Set<String> _allergies = {};
   int _leaveHour = 8;
@@ -44,7 +48,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   );
   String _skinNote = '';
 
-  static const _lastPage = 12;
+  /// Question ids: 3 cold, 4 heat, 5 activity, 6 age, 7 sex, 8 city,
+  /// 9 habits, 10 allergies, 11 schedule, 12 skin, 13 dress, 14 vignette, 15 acclimation
+  static const _quickFlow = [3, 4, 5, 8, 13];
+  static const _fullFlow = [3, 4, 5, 13, 8, 6, 7, 14, 15, 9, 10, 11, 12];
+  static const _detailExtra = [6, 7, 14, 15, 9, 10, 11, 12];
+
+  List<int> get _flow {
+    if (_quickMode) {
+      // After finishing quick core, optional details may append.
+      if (_flowIndex >= _quickFlow.length) {
+        return [..._quickFlow, ..._detailExtra];
+      }
+      return _quickFlow;
+    }
+    return _fullFlow;
+  }
+
+  bool get _inIntro => _page < 3;
+  bool get _inMode => _page == 3;
+  bool get _inQuestions => _page >= 4;
+
+  int get _questionId => _flow[_flowIndex.clamp(0, _flow.length - 1)];
+
+  bool get _atLastQuestion => _flowIndex >= _flow.length - 1;
 
   @override
   void initState() {
@@ -64,7 +91,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finish() async {
     final existing = await _prefs.loadClimateProfile();
-    // Fresh answers only — do not keep stale feedback from another account/cache.
     final profile = existing.copyWith(
       cityName: _city.name,
       cityCountry: _city.country,
@@ -76,6 +102,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       activity: _activity,
       ageBand: _ageBand,
       sex: _sex,
+      dressBias: _dressBias,
+      acclimation: _acclimation,
+      vignetteSensation: _vignetteSensation,
       habits: {..._habits},
       allergies: {..._allergies},
       leaveHour: _leaveHour,
@@ -99,6 +128,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _city = picked);
   }
 
+  void _next() {
+    if (_inIntro) {
+      setState(() => _page++);
+      return;
+    }
+    if (_inMode) {
+      setState(() {
+        _page = 4;
+        _flowIndex = 0;
+      });
+      return;
+    }
+    if (!_atLastQuestion) {
+      setState(() => _flowIndex++);
+      return;
+    }
+    _finish();
+  }
+
+  Future<void> _openOptionalDetails() async {
+    setState(() {
+      // Jump past quick core into optional extras while staying in quick mode.
+      _flowIndex = _quickFlow.length;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = _locale.t;
@@ -107,6 +162,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       (t('onboard.t2'), t('onboard.b2')),
       (t('onboard.t3'), t('onboard.b3')),
     ];
+
+    final showOptionalDetails =
+        _inQuestions && _quickMode && _flowIndex == _quickFlow.length - 1;
 
     return Scaffold(
       backgroundColor: GlowColors.mist,
@@ -118,8 +176,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               const Align(alignment: Alignment.centerRight, child: LanguageToggle()),
               const SizedBox(height: 16),
-              Expanded(child: _page < 3 ? _buildIntro(intro) : _buildQuestion()),
-              if (_page < 3)
+              Expanded(
+                child: _inIntro
+                    ? _buildIntro(intro)
+                    : _inMode
+                        ? _buildMode()
+                        : _buildQuestion(),
+              ),
+              if (_inIntro)
                 Row(
                   children: List.generate(
                     3,
@@ -134,17 +198,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 16),
+              if (_inQuestions) ...[
+                Text(
+                  '${_flowIndex + 1} / ${_flow.length}',
+                  style: const TextStyle(color: GlowColors.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 8),
+              if (showOptionalDetails)
+                TextButton(
+                  onPressed: _openOptionalDetails,
+                  child: Text(t('onboard.details')),
+                ),
               FilledButton(
                 onPressed: () async {
-                  if (_page < _lastPage) {
-                    setState(() => _page++);
-                  } else {
+                  if (_inQuestions && _atLastQuestion) {
                     await _finish();
+                  } else {
+                    _next();
                   }
                 },
                 child: Text(
-                  _page >= _lastPage ? t('onboard.start') : t('onboard.next'),
+                  (_inQuestions && _atLastQuestion) ? t('onboard.start') : t('onboard.next'),
                 ),
               ),
               TextButton(
@@ -175,6 +251,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         Text(current.$2, style: const TextStyle(fontSize: 16, height: 1.45)),
+      ],
+    );
+  }
+
+  Widget _buildMode() {
+    final t = _locale.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          t('onboard.mode.quick'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 12),
+        _ModeTile(
+          title: t('onboard.mode.quick'),
+          selected: _quickMode,
+          onTap: () => setState(() => _quickMode = true),
+        ),
+        const SizedBox(height: 8),
+        _ModeTile(
+          title: t('onboard.mode.full'),
+          selected: !_quickMode,
+          onTap: () => setState(() => _quickMode = false),
+        ),
       ],
     );
   }
@@ -215,7 +316,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildQuestion() {
     final t = _locale.t;
-    switch (_page) {
+    switch (_questionId) {
       case 3:
         return _ChoiceBlock(
           title: t('onboard.q.cold'),
@@ -291,6 +392,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onTap: _pickCity,
             ),
           ],
+        );
+      case 13:
+        return _ChoiceBlock<String>(
+          title: t('onboard.q.dress'),
+          options: [
+            (t('onboard.q.dress.lighter'), 'lighter'),
+            (t('onboard.q.dress.typical'), 'typical'),
+            (t('onboard.q.dress.warmer'), 'warmer'),
+          ],
+          selectedValue: _dressBias,
+          onSelect: (v) => setState(() => _dressBias = v),
+        );
+      case 14:
+        return _ChoiceBlock<String>(
+          title: t('onboard.q.vignette'),
+          options: [
+            (t('onboard.q.vignette.cold'), 'cold'),
+            (t('onboard.q.vignette.ok'), 'ok'),
+            (t('onboard.q.vignette.warm'), 'warm'),
+            (t('onboard.q.acclimation.skip'), 'unknown'),
+          ],
+          selectedValue: _vignetteSensation,
+          onSelect: (v) => setState(() => _vignetteSensation = v),
+        );
+      case 15:
+        return _ChoiceBlock<String>(
+          title: t('onboard.q.acclimation'),
+          options: [
+            (t('onboard.q.acclimation.long'), 'long'),
+            (t('onboard.q.acclimation.recent'), 'recent'),
+            (t('onboard.q.acclimation.temporary'), 'temporary'),
+            (t('onboard.q.acclimation.skip'), 'unknown'),
+          ],
+          selectedValue: _acclimation,
+          onSelect: (v) => setState(() => _acclimation = v),
         );
       case 9:
         return _multiChip(
@@ -383,6 +519,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         );
     }
+  }
+}
+
+class _ModeTile extends StatelessWidget {
+  const _ModeTile({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? GlowColors.foam : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: ListTile(
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          trailing: selected
+              ? const Icon(Icons.check_circle, color: GlowColors.sea)
+              : const Icon(Icons.circle_outlined, color: GlowColors.line),
+        ),
+      ),
+    );
   }
 }
 

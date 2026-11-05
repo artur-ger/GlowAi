@@ -5,6 +5,9 @@ class ClimateProfilePayload {
     this.activity = 'moderate',
     this.ageBand = 'unknown',
     this.sex = 'unknown',
+    this.dressBias = 'typical',
+    this.acclimation = 'unknown',
+    this.vignetteSensation = 'unknown',
     this.feedbackOffset = 0,
     this.feedbackCount = 0,
     this.habits = const [],
@@ -18,6 +21,9 @@ class ClimateProfilePayload {
   final String activity;
   final String ageBand;
   final String sex;
+  final String dressBias;
+  final String acclimation;
+  final String vignetteSensation;
   final double feedbackOffset;
   final int feedbackCount;
   final List<String> habits;
@@ -31,6 +37,9 @@ class ClimateProfilePayload {
         'activity': activity,
         'age_band': ageBand,
         'sex': sex,
+        'dress_bias': dressBias,
+        'acclimation': acclimation,
+        'vignette_sensation': vignetteSensation,
         'feedback_offset': feedbackOffset,
         'feedback_count': feedbackCount,
         'habits': habits,
@@ -300,6 +309,9 @@ class ClimateAccountProfile {
     this.activity = 'moderate',
     this.ageBand = 'unknown',
     this.sex = 'unknown',
+    this.dressBias = 'typical',
+    this.acclimation = 'unknown',
+    this.vignetteSensation = 'unknown',
     this.feedbackOffset = 0,
     this.feedbackCount = 0,
     this.habits = const [],
@@ -321,6 +333,9 @@ class ClimateAccountProfile {
   final String activity;
   final String ageBand;
   final String sex;
+  final String dressBias;
+  final String acclimation;
+  final String vignetteSensation;
   final double feedbackOffset;
   final int feedbackCount;
   final List<String> habits;
@@ -343,6 +358,9 @@ class ClimateAccountProfile {
       activity: json['activity'] as String? ?? 'moderate',
       ageBand: json['age_band'] as String? ?? 'unknown',
       sex: json['sex'] as String? ?? 'unknown',
+      dressBias: json['dress_bias'] as String? ?? 'typical',
+      acclimation: json['acclimation'] as String? ?? 'unknown',
+      vignetteSensation: json['vignette_sensation'] as String? ?? 'unknown',
       feedbackOffset: (json['feedback_offset'] as num?)?.toDouble() ?? 0,
       feedbackCount: (json['feedback_count'] as num?)?.toInt() ?? 0,
       habits: (json['habits'] as List<dynamic>? ?? []).map((e) => '$e').toList(),
@@ -366,6 +384,9 @@ class ClimateAccountProfile {
         'activity': activity,
         'age_band': ageBand,
         'sex': sex,
+        'dress_bias': dressBias,
+        'acclimation': acclimation,
+        'vignette_sensation': vignetteSensation,
         'feedback_offset': feedbackOffset,
         'feedback_count': feedbackCount,
         'habits': habits,

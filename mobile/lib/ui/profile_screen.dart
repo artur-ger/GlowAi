@@ -11,6 +11,7 @@ import '../data/trips_api.dart';
 import 'auth_screen.dart';
 import 'check_chat_screen.dart';
 import 'checkin_screen.dart';
+import 'climate_profile_screen.dart';
 import 'result_screen.dart';
 import '../l10n/app_locale.dart';
 import 'widgets/active_trip_card.dart';
@@ -361,6 +362,23 @@ class ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
                       ],
                       const LegalLinks(compact: true),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        tileColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        leading: const Icon(Icons.thermostat_outlined, color: GlowColors.sea),
+                        title: Text(AppLocale.instance.t('climate.profile.open')),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ClimateProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 12),
                       if (_due.isNotEmpty) ...[
                         const Text(

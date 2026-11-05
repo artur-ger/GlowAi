@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/climate_api.dart';
 import '../data/climate_models.dart';
+import '../data/climate_reminders.dart';
 import '../data/places.dart';
 import '../data/profile_prefs_store.dart';
 import '../l10n/app_locale.dart';
+import 'climate_profile_screen.dart';
 import 'widgets/city_picker_sheet.dart';
 import 'widgets/custom_add_field.dart';
 import 'widgets/language_toggle.dart';
@@ -21,6 +23,7 @@ class TodayScreenState extends State<TodayScreen> {
   final _prefs = ProfilePrefsStore();
   final _api = ClimateApi();
   final _locale = AppLocale.instance;
+  final _reminders = ClimateReminders();
   final _planCtrl = TextEditingController();
 
   ClimateProfilePrefs _profile = const ClimateProfilePrefs();
@@ -32,6 +35,8 @@ class TodayScreenState extends State<TodayScreen> {
   String _moment = 'anytime';
   String? _planSummary;
   bool _planBusy = false;
+  bool _remindersEnabled = false;
+  static const _calibTarget = 25;
 
   String t(String key) => _locale.t(key);
 
@@ -58,8 +63,12 @@ class TodayScreenState extends State<TodayScreen> {
 
   Future<void> _bootstrap() async {
     final profile = await _prefs.loadClimateProfile();
+    final remindOn = await _reminders.isEnabled();
     if (!mounted) return;
-    setState(() => _profile = profile);
+    setState(() {
+      _profile = profile;
+      _remindersEnabled = remindOn;
+    });
     await _reload();
   }
 
@@ -85,6 +94,14 @@ class TodayScreenState extends State<TodayScreen> {
           _moment = result.feedbackWindow!.moment;
         }
       });
+      final fw = result.feedbackWindow;
+      if (fw != null && (fw.moment == 'leave' || fw.moment == 'return')) {
+        await _reminders.maybeNotify(
+          moment: fw.moment,
+          title: fw.moment == 'leave' ? t('today.moment.leave') : t('today.moment.return'),
+          body: fw.prompt,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       final detail = e.toString();
@@ -186,7 +203,7 @@ class TodayScreenState extends State<TodayScreen> {
       if (!mounted) return;
       setState(() => _profile = next);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('today.feedback.thanks'))),
+        SnackBar(content: Text(t('climate.calib.after'))),
       );
       await _reload();
     } catch (_) {
@@ -321,24 +338,123 @@ class TodayScreenState extends State<TodayScreen> {
   }
 
   List<Widget> _buildTodayBody(ClimateTodayResult today) {
+    final count = _profile.feedbackCount;
+    final progress = (count / _calibTarget).clamp(0.0, 1.0);
     return [
       _SensationCard(today: today, t: t),
+      const SizedBox(height: 12),
+      _SectionCard(
+        title: t('climate.calib.title'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              t('climate.calib.progress')
+                  .replaceAll('{n}', '$count')
+                  .replaceAll('{t}', '$_calibTarget'),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              count >= 3
+                  ? t('climate.calib.active')
+                      .replaceAll('{off}', _profile.feedbackOffset.toStringAsFixed(2))
+                  : t('climate.calib.starter'),
+              style: const TextStyle(color: GlowColors.muted, height: 1.35),
+            ),
+            TextButton(
+              onPressed: () async {
+                final changed = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(builder: (_) => const ClimateProfileScreen()),
+                );
+                if (changed == true) await _bootstrap();
+              },
+              child: Text(t('climate.profile.open')),
+            ),
+          ],
+        ),
+      ),
       if (today.feedbackWindow != null && today.feedbackWindow!.moment != 'anytime') ...[
         const SizedBox(height: 12),
         _SectionCard(
           title: today.feedbackWindow!.moment == 'leave'
               ? t('today.moment.leave')
               : t('today.moment.return'),
-          child: Text(today.feedbackWindow!.prompt),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(today.feedbackWindow!.prompt),
+              const SizedBox(height: 8),
+              if (!_remindersEnabled)
+                OutlinedButton(
+                  onPressed: () async {
+                    final ok = await _reminders.enableWithPermission();
+                    if (!mounted) return;
+                    setState(() => _remindersEnabled = ok);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok ? t('today.remind.enabled') : t('common.error')),
+                      ),
+                    );
+                    if (ok) {
+                      await _reminders.maybeNotify(
+                        moment: today.feedbackWindow!.moment,
+                        title: today.feedbackWindow!.moment == 'leave'
+                            ? t('today.moment.leave')
+                            : t('today.moment.return'),
+                        body: today.feedbackWindow!.prompt,
+                      );
+                    }
+                  },
+                  child: Text(t('today.remind.enable')),
+                )
+              else
+                Text(
+                  t('today.remind.enabled'),
+                  style: const TextStyle(color: GlowColors.muted, fontSize: 13),
+                ),
+            ],
+          ),
         ),
       ],
       if (today.explanation.isNotEmpty) ...[
         const SizedBox(height: 12),
         _SectionCard(
           title: t('today.explain'),
-          child: Text(today.explanation, style: const TextStyle(height: 1.35)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(today.explanation, style: const TextStyle(height: 1.35)),
+              const SizedBox(height: 8),
+              Text(
+                today.llmUsed ? t('today.llm.llm') : t('today.llm.rules'),
+                style: const TextStyle(fontSize: 12, color: GlowColors.muted),
+              ),
+            ],
+          ),
         ),
       ],
+      const SizedBox(height: 12),
+      _SectionCard(
+        title: t('today.pet.compare'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('UTCI ${today.utciC.toStringAsFixed(1)}° · personal ${today.personalUtciC.toStringAsFixed(1)}°'),
+            if (today.support.petC != null)
+              Text('PET ${today.support.petC!.toStringAsFixed(1)}°'),
+            Text(
+              today.sensationLabel,
+              style: const TextStyle(color: GlowColors.muted),
+            ),
+          ],
+        ),
+      ),
       const SizedBox(height: 12),
       _SectionCard(
         title: t('today.support'),

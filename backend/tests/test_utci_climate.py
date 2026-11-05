@@ -1,6 +1,6 @@
 from app.schemas.climate import ClimateFeedbackRequest, ClimateProfileIn
 from app.services.mixed_ordinal import feedback_random_delta, predict
-from app.services.sensation import apply_feedback, clothing_from_ireq
+from app.services.sensation import apply_feedback, care_for, clothing_from_ireq, look_fail_boost
 from app.services.thermal_indices import compute_support, ireq_clo, wind_chill_c
 from app.services.utci import compute_utci, utci_to_sensation
 
@@ -35,6 +35,19 @@ def test_mixed_ordinal_personalization():
     assert p1.latent < p0.latent
 
 
+def test_day1_priors_dress_vignette_acclimation():
+    base = ClimateProfileIn()
+    warmer = ClimateProfileIn(dress_bias="warmer")
+    lighter = ClimateProfileIn(dress_bias="lighter")
+    vignette_cold = ClimateProfileIn(vignette_sensation="cold")
+    newcomer = ClimateProfileIn(acclimation="temporary")
+    p0 = predict(utci_c=10, wind_ms=2, rh=50, profile=base)
+    assert predict(utci_c=10, wind_ms=2, rh=50, profile=warmer).latent > p0.latent
+    assert predict(utci_c=10, wind_ms=2, rh=50, profile=lighter).latent < p0.latent
+    assert predict(utci_c=10, wind_ms=2, rh=50, profile=vignette_cold).latent < p0.latent
+    assert predict(utci_c=10, wind_ms=2, rh=50, profile=newcomer).latent < p0.latent
+
+
 def test_feedback_offset_direction():
     res = apply_feedback(
         ClimateFeedbackRequest(
@@ -56,3 +69,33 @@ def test_ireq_clothing_whitelist():
     items = clothing_from_ireq(1.6, "ru")
     assert items
     assert all(i.catalog_id for i in items)
+
+
+def test_look_boost_adds_fixative():
+    care = care_for(
+        utci_c=18,
+        uv=3,
+        wind=2,
+        humidity=50,
+        precip=0,
+        lang="ru",
+        appearance_risk=0,
+        look_boost=1,
+    )
+    ids = {c.catalog_id for c in care}
+    assert "hood_fixative" in ids
+    care2 = care_for(
+        utci_c=18,
+        uv=3,
+        wind=2,
+        humidity=50,
+        precip=0,
+        lang="en",
+        appearance_risk=0,
+        look_boost=2,
+    )
+    assert {c.catalog_id for c in care2} >= {"hood_fixative", "compact_kit"}
+
+
+def test_look_fail_boost_without_db():
+    assert look_fail_boost(None, client_key="u1", city="Moscow", lat=55.7, lon=37.6) == 0

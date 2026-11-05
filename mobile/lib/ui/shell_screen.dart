@@ -96,6 +96,7 @@ class _ShellScreenState extends State<ShellScreen> {
                       icon: Icons.flight_takeoff_outlined,
                       selectedIcon: Icons.flight_takeoff,
                       label: t('nav.trip'),
+                      hint: t('nav.trip.hint'),
                       onTap: () => _onTab(1),
                     ),
                     _NavItem(
@@ -123,34 +124,39 @@ class _NavItem extends StatelessWidget {
     required this.selectedIcon,
     required this.label,
     required this.onTap,
+    this.hint,
   });
 
   final bool selected;
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+  final String? hint;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = selected ? GlowColors.sea : GlowColors.muted;
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(selected ? selectedIcon : icon, color: color, size: 22),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
+      child: Tooltip(
+        message: hint ?? label,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(selected ? selectedIcon : icon, color: color, size: 22),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

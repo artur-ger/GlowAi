@@ -13,6 +13,10 @@ class ClimateProfileIn(BaseModel):
     activity: Literal["low", "moderate", "high"] = "moderate"
     age_band: Literal["under_30", "30_50", "over_50", "unknown"] = "unknown"
     sex: Literal["female", "male", "other", "unknown"] = "unknown"
+    # Day-1 priors (questionnaire → fixed effects; feedback still owns u_i)
+    dress_bias: Literal["lighter", "typical", "warmer"] = "typical"
+    acclimation: Literal["long", "recent", "temporary", "unknown"] = "unknown"
+    vignette_sensation: Literal["cold", "ok", "warm", "unknown"] = "unknown"
     feedback_offset: float = Field(0.0, ge=-5.0, le=5.0)
     feedback_count: int = Field(0, ge=0, le=10_000)
     habits: list[str] = Field(default_factory=list, max_length=12)
@@ -166,6 +170,9 @@ class ClimateAccountProfile(BaseModel):
     activity: Literal["low", "moderate", "high"] = "moderate"
     age_band: Literal["under_30", "30_50", "over_50", "unknown"] = "unknown"
     sex: Literal["female", "male", "other", "unknown"] = "unknown"
+    dress_bias: Literal["lighter", "typical", "warmer"] = "typical"
+    acclimation: Literal["long", "recent", "temporary", "unknown"] = "unknown"
+    vignette_sensation: Literal["cold", "ok", "warm", "unknown"] = "unknown"
     feedback_offset: float = 0.0
     feedback_count: int = 0
     habits: list[str] = Field(default_factory=list)

@@ -89,6 +89,41 @@ def clothing_from_ireq(ireq_clo: float, lang: str) -> list[ClothingItem]:
     ]
 
 
+def look_fail_boost(
+    db: Session | None,
+    *,
+    client_key: str,
+    city: str,
+    lat: float | None,
+    lon: float | None,
+) -> int:
+    """Extra appearance risk from recent look_preserved=no in the same place."""
+    if db is None or not client_key:
+        return 0
+    rows = (
+        db.query(ClimateFeedbackEvent)
+        .filter(ClimateFeedbackEvent.client_key == client_key[:64])
+        .filter(ClimateFeedbackEvent.look_preserved == "no")
+        .order_by(ClimateFeedbackEvent.id.desc())
+        .limit(8)
+        .all()
+    )
+    fails = 0
+    city_l = (city or "").strip().lower()
+    for ev in rows:
+        same_city = bool(city_l and (ev.city or "").strip().lower() == city_l)
+        same_place = False
+        if lat is not None and lon is not None and ev.lat is not None and ev.lon is not None:
+            same_place = abs(float(ev.lat) - lat) < 0.2 and abs(float(ev.lon) - lon) < 0.2
+        if same_city or same_place:
+            fails += 1
+    if fails >= 2:
+        return 2
+    if fails == 1:
+        return 1
+    return 0
+
+
 def care_for(
     *,
     utci_c: float,
@@ -100,6 +135,7 @@ def care_for(
     allergies: list[str] | None = None,
     habits: list[str] | None = None,
     appearance_risk: int = 0,
+    look_boost: int = 0,
 ) -> list[CareItem]:
     ru = lang != "en"
     allergies = [a.lower() for a in (allergies or [])]
@@ -129,13 +165,23 @@ def care_for(
         add("lip_balm", "Бальзам для губ", "Lip balm", "холодной стресс UTCI", "cold stress")
     if utci_c >= 26 and (humidity or 0) >= 60:
         add("repellent", "Репеллент (если актуально)", "Insect repellent (if local)", "тепло и влажность", "warm humid")
-    if appearance_risk >= 2:
+    if appearance_risk >= 2 or look_boost >= 1:
         add(
             "hood_fixative",
             "Капюшон / фиксатор для укладки",
             "Hood / hair fixative",
-            "риск для образа",
-            "look risk",
+            "риск для образа / прошлый «образ не сохранился»"
+            if look_boost
+            else "риск для образа",
+            "look risk / prior look not preserved" if look_boost else "look risk",
+        )
+    if look_boost >= 2:
+        add(
+            "compact_kit",
+            "Мини-набор: салфетки + фиксатор",
+            "Compact kit: wipes + fixative",
+            "повторный сбой образа в этом городе",
+            "repeat look fail in this city",
         )
     if any("пыльц" in a or "pollen" in a for a in allergies):
         add(
@@ -429,6 +475,19 @@ async def build_today(
     risk, risk_note = appearance_risk(
         wind=wind, humidity=rh, utci_c=pred.latent, uv=uv, precip=precip, lang=lang
     )
+    look_boost = look_fail_boost(
+        db,
+        client_key=client_key,
+        city=name,
+        lat=resolved_lat,
+        lon=resolved_lon,
+    )
+    if look_boost:
+        risk = min(3, risk + look_boost)
+        if lang == "en":
+            risk_note = f"{risk_note}; boosted after look not preserved"
+        else:
+            risk_note = f"{risk_note}; усилено после «образ не сохранился»"
     clothing = clothing_from_ireq(support.ireq_clo, lang)
     care = care_for(
         utci_c=pred.latent,
@@ -440,6 +499,7 @@ async def build_today(
         allergies=profile.allergies,
         habits=profile.habits,
         appearance_risk=risk,
+        look_boost=look_boost,
     )
 
     why = [

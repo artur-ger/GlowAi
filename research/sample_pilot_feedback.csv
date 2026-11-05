@@ -1,0 +1,14 @@
+client_key,city,predicted_sensation,actual_sensation,predicted_utci_c,worn_tier,look_preserved
+u1,Moscow,-1,-2,8.2,as_advised,yes
+u1,Moscow,-1,-1,9.0,as_advised,yes
+u1,Moscow,0,0,18.5,as_advised,na
+u2,Moscow,0,-1,17.0,lighter,no
+u2,Moscow,-1,-1,10.0,as_advised,no
+u2,Sochi,1,2,28.0,as_advised,yes
+u3,Sochi,1,1,27.5,as_advised,yes
+u3,Sochi,2,1,33.0,warmer,yes
+u3,Moscow,-2,-1,0.5,as_advised,na
+u4,Moscow,0,1,20.0,as_advised,yes
+u4,Moscow,0,0,19.0,as_advised,yes
+u5,Kazan,-1,0,7.0,warmer,yes
+u5,Kazan,-1,-1,6.5,as_advised,na

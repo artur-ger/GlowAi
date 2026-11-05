@@ -14,6 +14,9 @@ class ClimateProfilePrefs {
     this.activity = 'moderate',
     this.ageBand = 'unknown',
     this.sex = 'unknown',
+    this.dressBias = 'typical',
+    this.acclimation = 'unknown',
+    this.vignetteSensation = 'unknown',
     this.feedbackOffset = 0,
     this.feedbackCount = 0,
     this.clientKey = 'anon',
@@ -36,6 +39,9 @@ class ClimateProfilePrefs {
   final String activity;
   final String ageBand;
   final String sex;
+  final String dressBias;
+  final String acclimation;
+  final String vignetteSensation;
   final double feedbackOffset;
   final int feedbackCount;
   final String clientKey;
@@ -53,6 +59,9 @@ class ClimateProfilePrefs {
         activity: activity,
         ageBand: ageBand,
         sex: sex,
+        dressBias: dressBias,
+        acclimation: acclimation,
+        vignetteSensation: vignetteSensation,
         feedbackOffset: feedbackOffset,
         feedbackCount: feedbackCount,
         habits: habits.toList(),
@@ -76,6 +85,9 @@ class ClimateProfilePrefs {
     String? activity,
     String? ageBand,
     String? sex,
+    String? dressBias,
+    String? acclimation,
+    String? vignetteSensation,
     double? feedbackOffset,
     int? feedbackCount,
     String? clientKey,
@@ -98,6 +110,9 @@ class ClimateProfilePrefs {
       activity: activity ?? this.activity,
       ageBand: ageBand ?? this.ageBand,
       sex: sex ?? this.sex,
+      dressBias: dressBias ?? this.dressBias,
+      acclimation: acclimation ?? this.acclimation,
+      vignetteSensation: vignetteSensation ?? this.vignetteSensation,
       feedbackOffset: feedbackOffset ?? this.feedbackOffset,
       feedbackCount: feedbackCount ?? this.feedbackCount,
       clientKey: clientKey ?? this.clientKey,
@@ -129,6 +144,9 @@ class ProfilePrefsStore {
   static const _activityKey = 'glowai_climate_activity_v1';
   static const _ageKey = 'glowai_climate_age_v1';
   static const _sexKey = 'glowai_climate_sex_v1';
+  static const _dressKey = 'glowai_climate_dress_v1';
+  static const _acclimationKey = 'glowai_climate_acclimation_v1';
+  static const _vignetteKey = 'glowai_climate_vignette_v1';
   static const _feedbackKey = 'glowai_climate_feedback_v1';
   static const _feedbackCountKey = 'glowai_climate_feedback_count_v1';
   static const _clientKey = 'glowai_climate_client_key_v1';
@@ -194,6 +212,9 @@ class ProfilePrefsStore {
       activity: prefs.getString(_activityKey) ?? 'moderate',
       ageBand: prefs.getString(_ageKey) ?? 'unknown',
       sex: prefs.getString(_sexKey) ?? 'unknown',
+      dressBias: prefs.getString(_dressKey) ?? 'typical',
+      acclimation: prefs.getString(_acclimationKey) ?? 'unknown',
+      vignetteSensation: prefs.getString(_vignetteKey) ?? 'unknown',
       feedbackOffset: prefs.getDouble(_feedbackKey) ?? 0,
       feedbackCount: prefs.getInt(_feedbackCountKey) ?? 0,
       clientKey: clientKey,
@@ -223,6 +244,9 @@ class ProfilePrefsStore {
       activity: profile.activity,
       ageBand: profile.ageBand,
       sex: profile.sex,
+      dressBias: profile.dressBias,
+      acclimation: profile.acclimation,
+      vignetteSensation: profile.vignetteSensation,
       feedbackOffset: profile.feedbackOffset,
       feedbackCount: profile.feedbackCount,
       habits: profile.habits.toList(),
@@ -246,6 +270,9 @@ class ProfilePrefsStore {
       activity: account.activity,
       ageBand: account.ageBand,
       sex: account.sex,
+      dressBias: account.dressBias,
+      acclimation: account.acclimation,
+      vignetteSensation: account.vignetteSensation,
       feedbackOffset: account.feedbackOffset,
       feedbackCount: account.feedbackCount,
       clientKey: account.clientKey,
@@ -276,6 +303,9 @@ class ProfilePrefsStore {
       _activityKey,
       _ageKey,
       _sexKey,
+      _dressKey,
+      _acclimationKey,
+      _vignetteKey,
       _feedbackKey,
       _feedbackCountKey,
       _clientKey,
@@ -311,6 +341,9 @@ class ProfilePrefsStore {
     await prefs.setString(_activityKey, profile.activity);
     await prefs.setString(_ageKey, profile.ageBand);
     await prefs.setString(_sexKey, profile.sex);
+    await prefs.setString(_dressKey, profile.dressBias);
+    await prefs.setString(_acclimationKey, profile.acclimation);
+    await prefs.setString(_vignetteKey, profile.vignetteSensation);
     await prefs.setDouble(_feedbackKey, profile.feedbackOffset);
     await prefs.setInt(_feedbackCountKey, profile.feedbackCount);
     await prefs.setString(_clientKey, profile.clientKey);

@@ -51,6 +51,33 @@ def _sex_effect(sex: str) -> float:
     return 0.0
 
 
+def _dress_clo(dress_bias: str) -> float:
+    """Baseline clo from onboarding dress habit (lighter / typical / warmer)."""
+    if dress_bias == "lighter":
+        return 0.5
+    if dress_bias == "warmer":
+        return 0.95
+    return 0.7
+
+
+def _acclimation_effect(acclimation: str) -> float:
+    """Newcomers in cold climate feel colder (negative latent)."""
+    if acclimation == "temporary":
+        return -0.8
+    if acclimation == "recent":
+        return -0.5
+    return 0.0
+
+
+def _vignette_effect(vignette_sensation: str) -> float:
+    """Anchor vignette at ~+5 °C / light wind / jacket → latent prior."""
+    if vignette_sensation == "cold":
+        return -1.5
+    if vignette_sensation == "warm":
+        return 1.2
+    return 0.0
+
+
 def fixed_effects(
     *,
     utci_c: float,
@@ -64,16 +91,17 @@ def fixed_effects(
     bias = -1.2 * profile.cold_bias + 1.0 * profile.heat_bias
     wind_term = -0.15 * max(0.0, wind_ms - 3.0)
     rh_term = 0.02 * (rh - 50.0)
-    clo_term = 0.0
-    if worn_clo is not None:
-        # Extra insulation vs ~0.7 clo baseline raises felt warmth
-        clo_term = 2.0 * (worn_clo - 0.7)
+    # Explicit worn clo from feedback/plan wins; else dress habit prior
+    effective_clo = worn_clo if worn_clo is not None else _dress_clo(profile.dress_bias)
+    clo_term = 2.0 * (effective_clo - 0.7)
     return (
         utci_c
         + bias
         + _activity_effect(profile.activity)
         + _age_effect(profile.age_band)
         + _sex_effect(profile.sex)
+        + _acclimation_effect(profile.acclimation)
+        + _vignette_effect(profile.vignette_sensation)
         + wind_term
         + rh_term
         + clo_term
