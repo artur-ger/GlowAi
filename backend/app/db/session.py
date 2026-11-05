@@ -58,6 +58,8 @@ def init_db() -> None:
     _sqlite_add_column_if_missing("skin_checks", "remind_sent_at", "DATETIME")
     _sqlite_add_column_if_missing("skin_checks", "trip_id", "INTEGER")
     _sqlite_add_column_if_missing("skin_checkins", "revised_check_id", "INTEGER")
+    _sqlite_add_column_if_missing("climate_feedback_events", "look_preserved", "VARCHAR(8) DEFAULT 'na'")
+    _sqlite_add_column_if_missing("climate_feedback_events", "moment", "VARCHAR(16) DEFAULT 'anytime'")
 
 
 def get_db() -> Generator[Session, None, None]:

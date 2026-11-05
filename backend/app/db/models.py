@@ -32,6 +32,42 @@ class User(Base):
 
     checks: Mapped[list[SkinCheck]] = relationship(back_populates="user", cascade="all, delete-orphan")
     trips: Mapped[list[Trip]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    climate_profile: Mapped[ClimateUserProfile | None] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class ClimateUserProfile(Base):
+    """Per-account climate onboarding + live calibration (PDF §7)."""
+
+    __tablename__ = "climate_user_profiles"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    city_name: Mapped[str] = mapped_column(String(120), default="Москва")
+    city_country: Mapped[str] = mapped_column(String(120), default="Россия")
+    city_country_code: Mapped[str] = mapped_column(String(8), default="RU")
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cold_bias: Mapped[float] = mapped_column(Float, default=0.0)
+    heat_bias: Mapped[float] = mapped_column(Float, default=0.0)
+    activity: Mapped[str] = mapped_column(String(32), default="moderate")
+    age_band: Mapped[str] = mapped_column(String(32), default="unknown")
+    sex: Mapped[str] = mapped_column(String(32), default="unknown")
+    feedback_offset: Mapped[float] = mapped_column(Float, default=0.0)
+    feedback_count: Mapped[int] = mapped_column(Integer, default=0)
+    habits_csv: Mapped[str] = mapped_column(String(500), default="")
+    allergies_csv: Mapped[str] = mapped_column(String(500), default="")
+    skin_note: Mapped[str] = mapped_column(String(120), default="")
+    leave_hour: Mapped[int] = mapped_column(Integer, default=8)
+    return_hour: Mapped[int] = mapped_column(Integer, default=19)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="climate_profile")
 
 
 class Trip(Base):
@@ -118,3 +154,38 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     check: Mapped[SkinCheck] = relationship(back_populates="messages")
+
+
+class ClimateFeedbackEvent(Base):
+    """Pilot feedback for personal random intercept + look preservation."""
+
+    __tablename__ = "climate_feedback_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    client_key: Mapped[str] = mapped_column(String(64), index=True, default="anon")
+    city: Mapped[str] = mapped_column(String(120), default="")
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
+    predicted_sensation: Mapped[int] = mapped_column(Integer, default=0)
+    actual_sensation: Mapped[int] = mapped_column(Integer, default=0)
+    worn_tier: Mapped[str] = mapped_column(String(32), default="as_advised")
+    look_preserved: Mapped[str] = mapped_column(String(8), default="na")
+    moment: Mapped[str] = mapped_column(String(16), default="anytime")
+    predicted_utci_c: Mapped[float | None] = mapped_column(Float, nullable=True)
+    offset_delta: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class ClimatePlaceOffset(Base):
+    """Local place intercept p_j from aggregated outdoor feedback."""
+
+    __tablename__ = "climate_place_offsets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    place_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    city: Mapped[str] = mapped_column(String(120), default="")
+    offset_c: Mapped[float] = mapped_column(Float, default=0.0)
+    n_samples: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

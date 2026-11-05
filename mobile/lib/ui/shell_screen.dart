@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../l10n/app_locale.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
+import 'today_screen.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -14,6 +15,7 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> {
   int _index = 0;
+  final _todayKey = GlobalKey<TodayScreenState>();
   final _homeKey = GlobalKey<HomeScreenState>();
   final _profileKey = GlobalKey<ProfileScreenState>();
   final _locale = AppLocale.instance;
@@ -35,7 +37,7 @@ class _ShellScreenState extends State<ShellScreen> {
   }
 
   void _goPlanForFollowUp() {
-    setState(() => _index = 0);
+    setState(() => _index = 1);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _homeKey.currentState?.consumeFollowUpBridge();
     });
@@ -44,9 +46,9 @@ class _ShellScreenState extends State<ShellScreen> {
   void _onTab(int i) {
     setState(() => _index = i);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (i == 0) {
+      if (i == 1) {
         _homeKey.currentState?.consumeFollowUpBridge();
-      } else if (i == 1) {
+      } else if (i == 2) {
         _profileKey.currentState?.ensureFresh();
       }
     });
@@ -55,8 +57,6 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     final t = _locale.t;
-    // Column + nav (not Scaffold.bottomNavigationBar): on Flutter web the
-    // bottom bar was a solid grey strip with no destinations painted.
     return Scaffold(
       backgroundColor: GlowColors.mist,
       body: Column(
@@ -65,6 +65,7 @@ class _ShellScreenState extends State<ShellScreen> {
             child: IndexedStack(
               index: _index,
               children: [
+                TodayScreen(key: _todayKey),
                 HomeScreen(key: _homeKey),
                 ProfileScreen(
                   key: _profileKey,
@@ -85,17 +86,24 @@ class _ShellScreenState extends State<ShellScreen> {
                   children: [
                     _NavItem(
                       selected: _index == 0,
-                      icon: Icons.flight_takeoff_outlined,
-                      selectedIcon: Icons.flight_takeoff,
-                      label: t('nav.plan'),
+                      icon: Icons.wb_sunny_outlined,
+                      selectedIcon: Icons.wb_sunny,
+                      label: t('nav.today'),
                       onTap: () => _onTab(0),
                     ),
                     _NavItem(
                       selected: _index == 1,
+                      icon: Icons.flight_takeoff_outlined,
+                      selectedIcon: Icons.flight_takeoff,
+                      label: t('nav.trip'),
+                      onTap: () => _onTab(1),
+                    ),
+                    _NavItem(
+                      selected: _index == 2,
                       icon: Icons.person_outline,
                       selectedIcon: Icons.person,
                       label: t('nav.profile'),
-                      onTap: () => _onTab(1),
+                      onTap: () => _onTab(2),
                     ),
                   ],
                 ),

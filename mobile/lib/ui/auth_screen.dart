@@ -10,7 +10,11 @@ import 'widgets/native_text_field.dart';
 enum _AuthPhase { login, register, verify, forgot, reset }
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, this.onAuthed});
+
+  /// Root gate: called after successful login / verify / reset.
+  /// Modal (profile): still pops `true` when navigator can pop.
+  final VoidCallback? onAuthed;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -76,6 +80,13 @@ class _AuthScreenState extends State<AuthScreen> {
     _code.flushFromWeb();
   }
 
+  void _finishAuthed() {
+    widget.onAuthed?.call();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
   Future<void> _submit() async {
     _flushFields();
     setState(() {
@@ -88,7 +99,7 @@ class _AuthScreenState extends State<AuthScreen> {
         case _AuthPhase.verify:
           await _api.verifyEmail(email: _email.text.trim(), code: _code.text.trim());
           if (!mounted) return;
-          Navigator.of(context).pop(true);
+          _finishAuthed();
           return;
         case _AuthPhase.register:
           if (!_acceptTerms) {
@@ -116,12 +127,12 @@ class _AuthScreenState extends State<AuthScreen> {
             newPassword: _password.text,
           );
           if (!mounted) return;
-          Navigator.of(context).pop(true);
+          _finishAuthed();
           return;
         case _AuthPhase.login:
           await _api.login(email: _email.text.trim(), password: _password.text);
           if (!mounted) return;
-          Navigator.of(context).pop(true);
+          _finishAuthed();
           return;
       }
     } on DioException catch (e) {
@@ -179,6 +190,7 @@ class _AuthScreenState extends State<AuthScreen> {
       appBar: AppBar(
         title: Text(_title),
         backgroundColor: GlowColors.mist,
+        automaticallyImplyLeading: Navigator.of(context).canPop(),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -190,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
               _AuthPhase.forgot => 'Укажите email — пришлём код для нового пароля.',
               _AuthPhase.reset => 'Введите код из письма и новый пароль.',
               _ =>
-                'Аккаунт нужен, чтобы сохранять проверки и обсуждать состояние кожи в чате follow-up.',
+                'Сначала войдите: анкета и персональная погода привязаны к аккаунту.',
             },
             style: const TextStyle(color: GlowColors.muted, height: 1.4),
           ),

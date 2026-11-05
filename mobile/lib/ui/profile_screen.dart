@@ -6,6 +6,7 @@ import '../data/auth_api.dart';
 import '../data/auth_store.dart';
 import '../data/checks_api.dart';
 import '../data/follow_up_bridge.dart';
+import '../data/profile_prefs_store.dart';
 import '../data/trips_api.dart';
 import 'auth_screen.dart';
 import 'check_chat_screen.dart';
@@ -159,8 +160,9 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
+    await ProfilePrefsStore().clearClimateLocal();
     await _authApi.logout();
-    await _reload();
+    // AppSync.sessionChanged → root gate returns to AuthScreen.
   }
 
   Future<void> _deleteAccount() async {

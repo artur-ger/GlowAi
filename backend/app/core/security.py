@@ -38,18 +38,40 @@ def create_access_token(*, user_id: int, email: str) -> str:
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def get_current_user(
-    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    db: Session = Depends(get_db),
-) -> User:
+def _user_from_bearer(
+    creds: HTTPAuthorizationCredentials | None,
+    db: Session,
+    *,
+    required: bool,
+) -> User | None:
     if creds is None or not creds.credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Нужен Bearer token")
+        if required:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Нужен Bearer token")
+        return None
     try:
         data = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"])
         user_id = int(data.get("sub") or 0)
     except (JWTError, TypeError, ValueError) as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный токен") from exc
+        if required:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный токен") from exc
+        return None
     user = db.scalar(select(User).where(User.id == user_id))
-    if user is None:
+    if user is None and required:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
     return user
+
+
+def get_current_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    db: Session = Depends(get_db),
+) -> User:
+    user = _user_from_bearer(creds, db, required=True)
+    assert user is not None
+    return user
+
+
+def get_optional_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    db: Session = Depends(get_db),
+) -> User | None:
+    return _user_from_bearer(creds, db, required=False)

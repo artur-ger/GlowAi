@@ -164,6 +164,7 @@ class AuthApi {
       token: token,
       email: user.email,
       displayName: user.displayName,
+      userId: user.id,
     );
     AppSync.instance.sessionChanged();
     return user;

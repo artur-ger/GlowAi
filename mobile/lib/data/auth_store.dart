@@ -4,6 +4,7 @@ class AuthStore {
   static const _tokenKey = 'glowai_jwt_v1';
   static const _emailKey = 'glowai_email_v1';
   static const _nameKey = 'glowai_name_v1';
+  static const _userIdKey = 'glowai_user_id_v1';
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -11,6 +12,11 @@ class AuthStore {
   }
 
   Future<bool> get isLoggedIn async => (await getToken())?.isNotEmpty == true;
+
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_userIdKey);
+  }
 
   Future<String?> getEmail() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,11 +32,13 @@ class AuthStore {
     required String token,
     required String email,
     required String displayName,
+    required int userId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_emailKey, email);
     await prefs.setString(_nameKey, displayName);
+    await prefs.setInt(_userIdKey, userId);
   }
 
   Future<void> clear() async {
@@ -38,5 +46,6 @@ class AuthStore {
     await prefs.remove(_tokenKey);
     await prefs.remove(_emailKey);
     await prefs.remove(_nameKey);
+    await prefs.remove(_userIdKey);
   }
 }

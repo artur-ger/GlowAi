@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import analyze, auth, chat, checks, geo, health, profile, trips
+from app.api.routes import analyze, auth, chat, checks, climate, geo, health, profile, trips
 from app.core.config import settings
 from app.core.startup import validate_runtime_settings
 from app.db.session import init_db
@@ -48,6 +48,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(analyze.router)
+app.include_router(climate.router)
 app.include_router(geo.router)
 app.include_router(auth.router)
 app.include_router(checks.router)
