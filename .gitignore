@@ -10,6 +10,7 @@ __pycache__/
 .ruff_cache/
 .idea/
 .vscode/
+.cursor/
 _refs/
 backend/.venv/
 mobile/.dart_tool/
@@ -29,3 +30,14 @@ docs/_verify*.png
 docs/_verify_*.mjs
 _verify_logs/
 _verify_logs2/
+
+# Local scratch / e2e dumps / IDE leftovers (do not ship)
+tmp-*
+tmp-serve/
+node_modules/
+package.json
+package-lock.json
+pitch_deck.pptx
+*.ogg
+~$*
+*.tmp
