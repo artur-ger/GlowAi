@@ -56,20 +56,18 @@ Smoke:
 ```
 
 Гостевой analyze без аккаунта работает; сохранение и чат — после входа (вкладка **Профиль**).
-Юр.тексты: [docs/terms.md](docs/terms.md), [docs/privacy-photo.md](docs/privacy-photo.md) · runtime `/legal/terms`, `/legal/privacy`.
+Юр.тексты runtime: `/legal/terms`, `/legal/privacy` (файлы в `backend/legal/`).
 
 В `APP_ENV=prod` старт падает без сильного `JWT_SECRET`, SMTP и явных `CORS_ORIGINS`.
 
 ## Деплой на Amvera (web)
 
-Инструкция: [docs/amvera-deploy.md](docs/amvera-deploy.md)
-
 ```powershell
 .\scripts\prepare-amvera.ps1
-# заполните .env.amvera (SMTP + CORS) → переменные в панели Amvera → push
+# SMTP + CORS + JWT → переменные в панели Amvera → push
 ```
 
-Файлы: `Dockerfile`, `amvera.yaml`, `.env.amvera.example`.
+Файлы: `Dockerfile`, `amvera.yaml`. Секреты только локально / в панели Amvera (не в git).
 
 ## Нейросеть
 
@@ -85,8 +83,7 @@ LLM_ALLOW_RULE_BASED_FALLBACK=true
 
 ## Пилот: ПДн / селфи / удаление
 
-[docs/privacy-photo.md](docs/privacy-photo.md) — фото не пишется в БД.  
-[docs/terms.md](docs/terms.md) — условия пилота. Удаление аккаунта — в профиле или `DELETE /api/v1/auth/me`.
+Фото не пишется в БД; условия пилота — `backend/legal/`. Удаление аккаунта — в профиле или `DELETE /api/v1/auth/me`.
 
 ## Раздельный запуск
 
@@ -108,10 +105,9 @@ flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ## Структура
 
 ```
-backend/     FastAPI + SQLite volume + web UI
-mobile/      Flutter (План / Профиль)
+backend/     FastAPI + SQLite volume + web UI + legal/
+mobile/      Flutter (Сегодня / Поездка / Профиль)
 scripts/     start-mvp / build-web / prepare-amvera / smoke-*
-docs/        privacy, terms, amvera-deploy
 Dockerfile   образ для Amvera (корень репо)
 ```
 

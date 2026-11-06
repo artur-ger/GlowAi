@@ -1,8 +1,8 @@
 .env
 .env.*
-!.env.example
-!.env.amvera.example
 .venv/
+docs/
+research/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -26,8 +26,6 @@ uploads/
 *.p8
 *.p12
 *.mobileprovision
-docs/_verify*.png
-docs/_verify_*.mjs
 _verify_logs/
 _verify_logs2/
 
@@ -41,3 +39,5 @@ pitch_deck.pptx
 *.ogg
 ~$*
 *.tmp
+/*.pptx
+/*.pdf
